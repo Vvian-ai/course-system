@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>校园课程管理系统 - 登录</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 380px;
+            text-align: center;
+        }
+        .login-container h1 { color: #333; font-size: 28px; margin-bottom: 8px; }
+        .login-container .sub { color: #999; font-size: 14px; margin-bottom: 30px; }
+        .login-container input, .login-container select {
+            width: 100%; padding: 12px 15px; margin: 8px 0;
+            border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box;
+        }
+        .login-container input:focus, .login-container select:focus {
+            outline: none; border-color: #667eea;
+        }
+        .login-container button {
+            width: 100%; padding: 12px; background: #667eea; color: white;
+            border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 12px;
+        }
+        .login-container button:hover { background: #5a6fd6; }
+        .error-msg { color: #f44336; font-size: 14px; margin-top: 10px; min-height: 24px; }
+        .footer { margin-top: 20px; color: #aaa; font-size: 12px; }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <h1>📚 课程管理系统</h1>
+    <p class="sub">请输入账号信息登录</p>
+
+    <form id="loginForm" onsubmit="return false;">
+        <input type="text" id="username" placeholder="用户名（学号/教师编号）">
+        <input type="password" id="password" placeholder="密码">
+        <select id="role">
+            <option value="student">👨‍🎓 学生</option>
+            <option value="teacher">👨‍🏫 教师</option>
+            <option value="admin">⚙️ 管理员</option>
+        </select>
+        <button type="button" onclick="doLogin()">登 录</button>
+        <div class="error-msg" id="errorMsg"></div>
+    </form>
+    <div class="footer">校园课程管理系统 · 14组</div>
+</div>
+
+<script>
+    function doLogin() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const role = document.getElementById('role').value;
+        const errorMsg = document.getElementById('errorMsg');
+
+        if (!username) { errorMsg.textContent = '请输入用户名'; return; }
+        if (!password) { errorMsg.textContent = '请输入密码'; return; }
+
+        errorMsg.textContent = '登录中...';
+
+        // 注意：不再存 token 到 localStorage，token 只存在 HttpOnly Cookie 里
+        fetch(`/api/login?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&role=${role}`, {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.code === 200) {
+                // 只存显示用的信息，不存 token
+                localStorage.setItem('username', data.data.username);
+                localStorage.setItem('role', data.data.role);
+
+                const roleMap = { 'student': '/student', 'teacher': '/teacher', 'admin': '/admin' };
+                window.location.href = roleMap[role] || '/';
+            } else {
+                errorMsg.textContent = '❌ ' + data.message;
+            }
+        })
+        .catch(err => {
+            errorMsg.textContent = '❌ 请求失败：' + err;
+        });
+    }
+
+    document.getElementById('loginForm').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') doLogin();
+    });
+</script>
+</body>
+</html>

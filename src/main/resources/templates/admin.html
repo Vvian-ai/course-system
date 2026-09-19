@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>管理员端 - 课程系统</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { background: white; padding: 20px 30px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-wrap: wrap; gap: 10px; }
+        .header h2 { margin: 0; color: #333; }
+        .header .back { color: #2196F3; text-decoration: none; }
+        .card { background: white; border-radius: 10px; padding: 20px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card h2 { margin-top: 0; color: #2196F3; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background: #2196F3; color: white; }
+        .btn { display: inline-block; padding: 6px 14px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; text-decoration: none; margin: 2px; }
+        .btn-primary { background: #2196F3; color: white; }
+        .btn-primary:hover { background: #1976D2; }
+        .btn-success { background: #4CAF50; color: white; }
+        .btn-success:hover { background: #388E3C; }
+        .btn-danger { background: #f44336; color: white; }
+        .btn-danger:hover { background: #d32f2f; }
+        .btn-warning { background: #FF9800; color: white; }
+        .btn-warning:hover { background: #F57C00; }
+        .btn-sm { padding: 3px 8px; font-size: 12px; }
+        .form-inline { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .form-inline input, .form-inline select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; }
+        .badge { padding: 2px 10px; border-radius: 12px; font-size: 12px; }
+        .badge-success { background: #4CAF50; color: white; }
+        .badge-danger { background: #f44336; color: white; }
+        .flex-row { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .logout-btn { background: #f44336; color: white; border: none; padding: 6px 16px; border-radius: 4px; cursor: pointer; }
+        .logout-btn:hover { background: #d32f2f; }
+        .admin-info { font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>⚙️ 管理员端</h2>
+        <div class="flex-row">
+            <span class="admin-info" id="userInfo">加载中...</span>
+            <button class="logout-btn" onclick="logout()">退出</button>
+            <a href="/" class="back">🏠 返回首页</a>
+        </div>
+    </div>
+
+    <h1 style="text-align:center; color:#333;">📚 校园课程管理系统 - 管理中心</h1>
+
+    <!-- 添加课程 -->
+    <div class="card">
+        <h2>📖 添加新课程</h2>
+        <form id="addCourseForm" onsubmit="return false;">
+            <div class="form-inline">
+                <input type="text" id="courseId" placeholder="课程编号（如 009）" required>
+                <input type="text" id="courseName" placeholder="课程名称" required>
+                <input type="number" id="credit" placeholder="学分" required min="1">
+                <input type="number" id="capacity" placeholder="容量（默认50）" min="1" value="50">
+                <input type="text" id="specificRequirement" placeholder="专业要求（选填）">
+                <button type="button" class="btn btn-success" onclick="addCourse()">➕ 添加课程</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 添加学生 -->
+    <div class="card">
+        <h2>👨‍🎓 添加学生</h2>
+        <form id="addStudentForm" onsubmit="return false;">
+            <div class="form-inline">
+                <input type="text" id="studentId" placeholder="学号（如 1004）" required>
+                <input type="text" id="studentName" placeholder="学生姓名" required>
+                <input type="text" id="major" placeholder="专业" required>
+                <input type="text" id="studentPassword" placeholder="密码（默认123456）" value="123456">
+                <button type="button" class="btn btn-success" onclick="addStudent()">➕ 添加学生</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 添加教师 -->
+    <div class="card">
+        <h2>👨‍🏫 添加教师</h2>
+        <form id="addTeacherForm" onsubmit="return false;">
+            <div class="form-inline">
+                <input type="text" id="teacherId" placeholder="教师编号（如 2006）" required>
+                <input type="text" id="teacherName" placeholder="教师姓名" required>
+                <input type="text" id="teacherPassword" placeholder="密码（默认123456）" value="123456">
+                <button type="button" class="btn btn-success" onclick="addTeacher()">➕ 添加教师</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 学生列表 -->
+    <div class="card">
+        <h2>👨‍🎓 所有学生</h2>
+        <div id="studentList"><p>加载中...</p></div>
+    </div>
+
+    <!-- 教师列表 -->
+    <div class="card">
+        <h2>👨‍🏫 所有教师</h2>
+        <div id="teacherList"><p>加载中...</p></div>
+    </div>
+
+    <!-- 课程列表 -->
+    <div class="card">
+        <h2>📋 所有课程</h2>
+        <div id="courseList"><p>加载中...</p></div>
+    </div>
+
+    <!-- 选课管理 -->
+    <div class="card">
+        <h2>📌 选课管理</h2>
+        <form id="enrollForm" onsubmit="return false;">
+            <div class="form-inline">
+                <select id="enrollStudentId" required>
+                    <option value="">-- 选择学生 --</option>
+                </select>
+                <select id="enrollCourseId" required>
+                    <option value="">-- 选择课程 --</option>
+                </select>
+                <button type="button" class="btn btn-success" onclick="adminSelectCourse()">📥 选课</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const username = localStorage.getItem('username');
+    const role = localStorage.getItem('role');
+
+    if (!username) {
+        window.location.href = '/login';
+    }
+
+    if (role !== 'admin') {
+        alert('只有管理员可以访问此页面');
+        window.location.href = '/login';
+    }
+
+    const roleMap = { 'student': '学生', 'teacher': '教师', 'admin': '管理员' };
+    document.getElementById('userInfo').textContent = '👤 ' + username + '（' + (roleMap[role] || role) + '）';
+
+    function checkToken(res) {
+        if (res.status === 401) {
+            localStorage.clear();
+            window.location.href = '/login';
+            throw new Error('未登录');
+        }
+        return res.json();
+    }
+
+    function loadAllData() {
+        loadStudents();
+        loadTeachers();
+        loadCourses();
+        loadEnrollOptions();
+    }
+
+    function loadStudents() {
+        const container = document.getElementById('studentList');
+        fetch('/api/students')
+            .then(checkToken)
+            .then(data => {
+                if (data.code === 200) {
+                    const list = data.data || [];
+                    if (list.length === 0) {
+                        container.innerHTML = '<p style="color:#888;">暂无学生</p>';
+                        return;
+                    }
+                    let html = `<table><thead><tr><th>学号</th><th>姓名</th><th>专业</th><th>已选课程</th><th>操作</th></tr></thead><tbody>`;
+                    list.forEach(s => {
+                        const courses = (s.enrolledCourseNames && s.enrolledCourseNames.length > 0)
+                            ? s.enrolledCourseNames.join('、')
+                            : '无';
+                        html += `<tr>
+                            <td>${s.studentId}</td>
+                            <td>${s.name}</td>
+                            <td>${s.major}</td>
+                            <td>${courses}</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.studentId}')">删除</button>
+                            </td>
+                        </tr>`;
+                    });
+                    html += '</tbody></table>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<p style="color:red;">加载失败：' + data.message + '</p>';
+                }
+            })
+            .catch(err => {
+                if (err.message !== '未登录') {
+                    container.innerHTML = '<p style="color:red;">加载失败：' + err + '</p>';
+                }
+            });
+    }
+
+    function addStudent() {
+        const studentId = document.getElementById('studentId').value.trim();
+        const name = document.getElementById('studentName').value.trim();
+        const major = document.getElementById('major').value.trim();
+        const password = document.getElementById('studentPassword').value.trim() || '123456';
+
+        if (!studentId || !name || !major) {
+            alert('请完整填写学生信息');
+            return;
+        }
+
+        fetch('/api/students?studentId=' + encodeURIComponent(studentId)
+            + '&name=' + encodeURIComponent(name)
+            + '&major=' + encodeURIComponent(major)
+            + '&password=' + encodeURIComponent(password), {
+            method: 'POST'
+        })
+        .then(checkToken)
+        .then(data => {
+            if (data.code === 200) {
+                alert('学生添加成功！');
+                document.getElementById('addStudentForm').reset();
+                document.getElementById('studentPassword').value = '123456';
+                loadAllData();
+            } else {
+                alert('添加失败：' + data.message);
+            }
+        })
+        .catch(err => {
+            if (err.message !== '未登录') alert('请求失败：' + err);
+        });
+    }
+
+    function deleteStudent(studentId) {
+        if (!confirm('确认删除学生 ' + studentId + ' 吗？其选课记录也会被清除。')) return;
+        fetch('/api/students/' + studentId, { method: 'DELETE' })
+        .then(checkToken)
+        .then(data => {
+            if (data.code === 200) {
+                alert('删除成功！');
+                loadAllData();
+            } else {
+                alert('删除失败：' + data.message);
+            }
+        })
+        .catch(err => {
+            if (err.message !== '未登录') alert('请求失败：' + err);
+        });
+    }
+
+    function loadTeachers() {
+        const container = document.getElementById('teacherList');
+        fetch('/api/teachers')
+            .then(checkToken)
+            .then(data => {
+                if (data.code === 200) {
+                    const list = data.data || [];
+                    if (list.length === 0) {
+                        container.innerHTML = '<p style="color:#888;">暂无教师</p>';
+                        return;
+                    }
+                    let html = `<table><thead><tr><th>教师编号</th><th>姓名</th><th>操作</th></tr></thead><tbody>`;
+                    list.forEach(t => {
+                        html += `<tr>
+                            <td>${t.teacherId}</td>
+                            <td>${t.name}</td>
+                            <td><button class="btn btn-danger btn-sm" onclick="deleteTeacher('${t.teacherId}')">删除</button></td>
+                        </tr>`;
+                    });
+                    html += '</tbody></table>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<p style="color:red;">加载失败：' + data.message + '</p>';
+                }
+            })
+            .catch(err => {
+                if (err.message !== '未登录') {
+                    container.innerHTML = '<p style="color:red;">加载失败：' + err + '</p>';
+                }
+            });
+    }
+
+    function addTeacher() {
+        const teacherId = document.getElementById('teacherId').value.trim();
+        const name = document.getElementById('teacherName').value.trim();
+        const password = document.getElementById('teacherPassword').value.trim() || '123456';
+
+        if (!teacherId || !name) {
+            alert('请完整填写教师信息');
+            return;
+        }
+
+        fetch('/api/teachers?teacherId=' + encodeURIComponent(teacherId)
+            + '&name=' + encodeURIComponent(name)
+            + '&password=' + encodeURIComponent(password), {
+            method: 'POST'
+        })
+        .then(checkToken)
+        .then(data => {
+            if (data.code === 200) {
+                alert('教师添加成功！');
+                document.getElementById('addTeacherForm').reset();
+                document.getElementById('teacherPassword').value = '123456';
+                loadAllData();
+            } else {
+                alert('添加失败：' + data.message);
+            }
+        })
+        .catch(err => {
+            if (err.message !== '未登录') alert('请求失败：' + err);
+        });
+    }
+
+    function deleteTeacher(teacherId) {
+        if (!confirm('确认删除教师 ' + teacherId + ' 吗？其授课的课程会变为未分配。')) return;
+        fetch('/api/teachers/' + teacherId, { method: 'DELETE' })
+        .then(checkToken)
+        .then(data => {
+            if (data.code === 200) {
+                alert('删除成功！');
+                loadAllData();
+            } else {
+                alert('删除失败：' + data.message);
+            }
+        })
+        .catch(err => {
+            if (err.message !== '未登录') alert('请求失败：' + err);
+        });
+    }
+
+    function loadCourses() {
+        const container = document.getElementById('courseList');
+        fetch('/api/courses')
+            .then(checkToken)
+            .then(data => {
+                if (data.code === 200) {
+                    const list = data.data || [];
+                    if (list.length === 0) {
+                        container.innerHTML = '<p style="color:#888;">暂无课程</p>';
+                        return;
+                    }
+                    fetch('/api/teachers')
+                        .then(checkToken)
+                        .then(data2 => {
+                            const teachers = data2.code === 200 ? (data2.data || []) : [];
+                            let html = `<table><thead><tr><th>编号</th><th>名称</th><th>学分</th><th>容量</th><th>已选</th><th>专业要求</th><th>授课教师</th><th>操作</th></tr></thead><tbody>`;
+                            list.forEach(c => {
+                                const teacherName = c.teacherName || (c.teacherId ? c.teacherId : '未分配');
+                                const enrolled = c.enrolledCount != null ? c.enrolledCount : 0;
+                                const capacity = c.capacity != null ? c.capacity : 50;
+                                html += `<tr>
+                                    <td>${c.courseId}</td>
+                                    <td>${c.courseName}</td>
+                                    <td>${c.credit}</td>
+                                    <td>${capacity}</td>
+                                    <td>${enrolled}</td>
+                                    <td>${c.specificRequirement || '通用'}</td>
+                                    <td>${teacherName}</td>
+                                    <td>
+                                        <select id="assign_${c.courseId}" style="padding:4px 8px; border:1px solid #ddd; border-radius:4px;">
+                                            <option value="">-- 选择教师 --</option>
+                                            ${teachers.map(t => `<option value="${t.teacherId}">${t.name}(${t.teacherId})</option>`).join('')}
+                                        </select>
+                                        <button class="btn btn-success btn-sm" onclick="assignTeacher('${c.courseId}')">分配</button>
+                                        <button class="btn btn-warning btn-sm" onclick="unassignTeacher('${c.courseId}')">取消</button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteCourse('${c.courseId}')">删除</button>
+                                    </td>
+                                </tr>`;
+                            });
+                            html += '</tbody></table>';
+                            container.innerHTML = html;
+                        })
+                        .catch(err => {
+                            if (err.message !== '未登录') container.innerHTML = '<p style="color:red;">加载教师列表失败</p>';
+                        });
+                } else {
+                    container.innerHTML = '<p style="color:red;">加载失败：' + data.message + '</p>';
+                }
+            })
+            .catch(err => {
+                if (err.message !== '未登录') {
+                    container.innerHTML = '<p style="color:red;">加载失败：' + err + '</p>';
+                }
+            });
+    }
+
+    function addCourse() {
+        const courseId = document.getElementById('courseId').value.trim();
+        const courseName = document.getElementById('courseName').value.trim();
+        const credit = document.getElementById('credit').value.trim();
+        const capacity = document.getElementById('capacity').value.trim() || 50;
+        const specificRequirement = document.getElementById('specificRequirement').value.trim();
+
+        if (!courseId || !courseName || !credit) {
+            alert('请完整填写课程信息');
+            return;
+        }
+
+        fetch('/api/courses?courseId=' + encodeURIComponent(courseId)
+            + '&courseName=' + encodeURIComponent(courseName)
+            + '&credit=' + credit
+            + '&capacity=' + capacity
+            + '&specificRequirement=' + encodeURIComponent(specificRequirement), {
+            method: 'POST'
+        })
+        .then(checkToken)
+        .then(data => {
+            if (data.code === 200) {
+                alert('课程添加成功！');
+                document.getElementById('addCourseForm').reset();
+                document.getElementById('capacity').value = 50;
+                loadAllData();
+            } else {
+                alert('添加失败：' + data.message);
+            }
+        })
+        .catch(err => {
+            if (err.message !== '未登录') alert('请求失败：' + err);
+        });
+    }
+
+    function deleteCourse(courseId) {
+        if (!confirm('确认删除课程 ' + courseId + ' 吗？该课程的所有选课记录也会被清除。')) return;
+        fetch('/api/courses/' + courseId, { method: 'DELETE' })
+        .then(checkToken)
+        .then(data => {
+            if (data.code === 200) {
+                alert('删除成功！');
+                loadAllData();
+            } else {
+                alert('删除失败：' + data.message);
+            }
+        })
+        .catch(err => {
+            if (err.message !== '未登录') alert('请求失败：' + err);
+        });
+    }
+
+    function assignTeacher(courseId) {
+        const select = document.getElementById('assign_' + courseId);
+        const teacherId = select.value;
+        if (!teacherId) {
+            alert('请先选择一位教师');
+            return;
+        }
+        if (!confirm('确认将课程 ' + courseId + ' 分配给教师 ' + teacherId + ' 吗？')) return;
+
+        fetch('/api/courses/assign?courseId=' + courseId + '&teacherId=' + teacherId, { method: 'PUT' })
+        .then(checkToken)
+        .then(data => {
+            if (data.code === 200) {
+                alert('分配成功！');
+                loadAllData();
+            } else {
+                alert('分配失败：' + data.message);
+            }
+        })
+        .catch(err => {
+            if (err.message !== '未登录') alert('请求失败：' + err);
+        });
+    }
+
+    function unassignTeacher(courseId) {
+        if (!confirm('确认取消课程 ' + courseId + ' 的教师分配吗？')) return;
+        fetch('/api/courses/unassign?courseId=' + courseId, { method: 'PUT' })
+        .then(checkToken)
+        .then(data => {
+            if (data.code === 200) {
+                alert('取消成功！');
+                loadAllData();
+            } else {
+                alert('取消失败：' + data.message);
+            }
+        })
+        .catch(err => {
+            if (err.message !== '未登录') alert('请求失败：' + err);
+        });
+    }
+
+    function loadEnrollOptions() {
+        fetch('/api/students')
+            .then(checkToken)
+            .then(data => {
+                if (data.code === 200) {
+                    const list = data.data || [];
+                    const select = document.getElementById('enrollStudentId');
+                    select.innerHTML = '<option value="">-- 选择学生 --</option>' + list.map(s => `<option value="${s.studentId}">${s.name}(${s.studentId})</option>`).join('');
+                }
+            })
+            .catch(err => console.error(err));
+
+        fetch('/api/courses')
+            .then(checkToken)
+            .then(data => {
+                if (data.code === 200) {
+                    const list = data.data || [];
+                    const select = document.getElementById('enrollCourseId');
+                    select.innerHTML = '<option value="">-- 选择课程 --</option>' + list.map(c => `<option value="${c.courseId}">${c.courseName}(${c.courseId})</option>`).join('');
+                }
+            })
+            .catch(err => console.error(err));
+    }
+
+    function adminSelectCourse() {
+        const studentId = document.getElementById('enrollStudentId').value;
+        const courseId = document.getElementById('enrollCourseId').value;
+        if (!studentId || !courseId) {
+            alert('请选择学生和课程');
+            return;
+        }
+
+        fetch('/api/enrollments?studentId=' + studentId + '&courseId=' + courseId, { method: 'POST' })
+        .then(checkToken)
+        .then(data => {
+            if (data.code === 200) {
+                alert('选课成功！');
+                loadAllData();
+            } else {
+                alert('选课失败：' + data.message);
+            }
+        })
+        .catch(err => {
+            if (err.message !== '未登录') alert('请求失败：' + err);
+        });
+    }
+
+    function logout() {
+        fetch('/api/logout', { method: 'POST' })
+            .finally(() => {
+                localStorage.clear();
+                window.location.href = '/login';
+            });
+    }
+
+    window.onload = function () {
+        loadAllData();
+    };
+</script>
+</body>
+</html>

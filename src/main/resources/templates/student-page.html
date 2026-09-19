@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>学生端 - 课程系统</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { background: white; padding: 20px 30px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-wrap: wrap; gap: 10px; }
+        .header h2 { margin: 0; color: #333; }
+        .header .back { color: #2196F3; text-decoration: none; }
+        .card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card h3 { margin-top: 0; color: #2196F3; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background: #2196F3; color: white; }
+        .btn { padding: 6px 14px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block; }
+        .btn-success { background: #4CAF50; color: white; }
+        .btn-success:hover { background: #388E3C; }
+        .btn-danger { background: #f44336; color: white; }
+        .btn-danger:hover { background: #d32f2f; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+        .badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+        .badge-success { background: #4CAF50; color: white; }
+        .badge-warning { background: #FF9800; color: white; }
+        .student-info { font-weight: bold; color: #333; }
+        .empty { color: #888; padding: 10px; }
+        .flex-row { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .logout-btn { background: #f44336; color: white; border: none; padding: 6px 16px; border-radius: 4px; cursor: pointer; }
+        .logout-btn:hover { background: #d32f2f; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>👨‍🎓 学生端</h2>
+        <div class="flex-row">
+            <span class="student-info" id="userInfo">加载中...</span>
+            <button class="logout-btn" onclick="logout()">退出</button>
+            <a href="/" class="back">🏠 返回首页</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📖 可选课程</h3>
+        <table>
+            <thead><tr><th>编号</th><th>名称</th><th>学分</th><th>专业要求</th><th>操作</th></tr></thead>
+            <tbody>
+            <tr th:each="c : ${courses}">
+                <td th:text="${c.courseId}">001</td>
+                <td th:text="${c.courseName}">课程名</td>
+                <td th:text="${c.credit}">3</td>
+                <td th:text="${c.specificRequirement} ?: '通用'">通用</td>
+                <td>
+                    <button class="btn btn-success btn-sm" th:data-id="${c.courseId}" onclick="selectCourse(this.getAttribute('data-id'))">选课</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>📋 我的已选课程</h3>
+        <div id="myCoursesContainer">
+            <p class="empty">加载中...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const username = localStorage.getItem('username');
+    const role = localStorage.getItem('role');
+
+    if (!username) {
+        window.location.href = '/login';
+    }
+
+    const roleMap = { 'student': '学生', 'teacher': '教师', 'admin': '管理员' };
+    document.getElementById('userInfo').textContent = '👤 ' + username + '（' + (roleMap[role] || role) + '）';
+
+    function loadMyCourses() {
+        const container = document.getElementById('myCoursesContainer');
+        // 不带 Authorization 头，Cookie 会自动带上
+        fetch('/api/enrollments/student/' + username)
+        .then(res => {
+            if (res.status === 401) {
+                window.location.href = '/login';
+                throw new Error('未登录');
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data.code === 200) {
+                const list = data.data || [];
+                if (list.length === 0) {
+                    container.innerHTML = '<p class="empty">📭 暂无已选课程</p>';
+                    return;
+                }
+                let html = `<table>
+                    <thead><tr><th>课程编号</th><th>成绩</th><th>操作</th></tr></thead>
+                    <tbody>`;
+                list.forEach(e => {
+                    const gradeDisplay = (e.grade === null || e.grade === undefined)
+                        ? '<span class="badge badge-warning">未录入</span>'
+                        : '<span class="badge badge-success">' + e.grade + '</span>';
+                    html += `<tr>
+                        <td>${e.courseId}</td>
+                        <td>${gradeDisplay}</td>
+                        <td><button class="btn btn-danger btn-sm" data-id="${e.courseId}" onclick="dropCourse(this.getAttribute('data-id'))">退课</button></td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p class="empty" style="color:red;">加载失败：' + data.message + '</p>';
+            }
+        })
+        .catch(err => {
+            if (err.message !== '未登录') {
+                container.innerHTML = '<p class="empty" style="color:red;">加载失败：' + err + '</p>';
+            }
+        });
+    }
+
+    function selectCourse(courseId) {
+        if (!confirm('确认选课吗？')) return;
+        fetch('/api/enrollments?courseId=' + courseId, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.code === 200) {
+                alert('选课成功！');
+                loadMyCourses();
+            } else {
+                alert('选课失败：' + data.message);
+            }
+        })
+        .catch(err => alert('请求失败：' + err));
+    }
+
+    function dropCourse(courseId) {
+        if (!confirm('确认退课吗？')) return;
+        fetch('/api/enrollments?courseId=' + courseId, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.code === 200) {
+                alert('退课成功！');
+                loadMyCourses();
+            } else {
+                alert('退课失败：' + data.message);
+            }
+        })
+        .catch(err => alert('请求失败：' + err));
+    }
+
+    function logout() {
+        fetch('/api/logout', { method: 'POST' })
+            .finally(() => {
+                localStorage.clear();
+                window.location.href = '/login';
+            });
+    }
+
+    window.onload = function() {
+        loadMyCourses();
+    };
+</script>
+</body>
+</html>

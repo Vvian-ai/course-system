@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>校园课程管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white; border-radius: 20px; padding: 50px 60px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center; max-width: 800px; width: 90%; position: relative;
+        }
+        .user-bar {
+            position: absolute; top: 15px; right: 25px; font-size: 14px; color: #666;
+        }
+        .user-bar button {
+            background: none; border: 1px solid #ccc; border-radius: 4px;
+            padding: 4px 12px; cursor: pointer; font-size: 13px; color: #666; margin-left: 8px;
+        }
+        .user-bar button:hover { background: #f0f0f0; }
+        h1 { color: #333; font-size: 32px; margin-bottom: 10px; }
+        .subtitle { color: #888; font-size: 16px; margin-bottom: 40px; }
+        .cards { display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; }
+        .card {
+            background: #f8f9fa; border-radius: 16px; padding: 30px 25px;
+            width: 200px; text-decoration: none; color: #333;
+            transition: all 0.3s ease; border: 2px solid transparent;
+        }
+        .card:hover {
+            transform: translateY(-8px); box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        .card .icon { font-size: 48px; display: block; margin-bottom: 15px; }
+        .card .title { font-size: 20px; font-weight: bold; }
+        .card .desc { font-size: 13px; color: #888; margin-top: 8px; }
+        .card.student:hover { border-color: #4CAF50; }
+        .card.teacher:hover { border-color: #FF9800; }
+        .card.admin:hover { border-color: #f44336; }
+        .footer { margin-top: 40px; color: #aaa; font-size: 13px; }
+        .login-hint { color: #f44336; font-size: 14px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="user-bar">
+        <span id="userDisplay">未登录</span>
+        <button id="logoutBtn" onclick="logout()" style="display:none;">退出</button>
+    </div>
+
+    <h1>📚 校园课程管理系统</h1>
+    <p class="subtitle">请选择您的身份进入系统</p>
+
+    <div class="cards">
+        <a href="/student" class="card student">
+            <span class="icon">👨‍🎓</span>
+            <div class="title">学生</div>
+            <div class="desc">查看可选课程 · 选课 · 退课 · 查看成绩</div>
+        </a>
+        <a href="/teacher" class="card teacher">
+            <span class="icon">👨‍🏫</span>
+            <div class="title">教师</div>
+            <div class="desc">查看授课课程 · 学生名单 · 录入成绩</div>
+        </a>
+        <a href="/admin" class="card admin">
+            <span class="icon">⚙️</span>
+            <div class="title">管理员</div>
+            <div class="desc">课程管理 · 学生管理 · 教师管理</div>
+        </a>
+    </div>
+
+    <div id="loginHint" class="login-hint"></div>
+    <div class="footer">课程设计 · 校园课程管理系统 · 14组</div>
+</div>
+
+<script>
+    window.onload = function() {
+        // 用 username 判断登录状态，不再用 token
+        const username = localStorage.getItem('username');
+        const role = localStorage.getItem('role');
+
+        const userDisplay = document.getElementById('userDisplay');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const loginHint = document.getElementById('loginHint');
+
+        if (!username) {
+            userDisplay.textContent = '未登录';
+            logoutBtn.style.display = 'none';
+            loginHint.textContent = '⚠️ 请先登录！3秒后跳转到登录页面...';
+            setTimeout(function() {
+                window.location.href = '/login';
+            }, 3000);
+            return;
+        }
+
+        const roleMap = { 'student': '学生', 'teacher': '教师', 'admin': '管理员' };
+        userDisplay.textContent = '👤 ' + username + '（' + (roleMap[role] || role) + '）';
+        logoutBtn.style.display = 'inline-block';
+    };
+
+    function logout() {
+        fetch('/api/logout', { method: 'POST' })
+            .finally(() => {
+                localStorage.clear();
+                window.location.href = '/login';
+            });
+    }
+</script>
+</body>
+</html>

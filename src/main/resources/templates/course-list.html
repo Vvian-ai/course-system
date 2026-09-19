@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>课程列表</title>
+    <style>
+        table { border-collapse: collapse; width: 80%; margin: 20px auto; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background-color: #4CAF50; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        h2 { text-align: center; }
+    </style>
+</head>
+<body>
+<h2>📚 全部课程列表</h2>
+<table>
+    <thead>
+    <tr>
+        <th>课程编号</th>
+        <th>课程名称</th>
+        <th>学分</th>
+        <th>专业要求</th>
+        <th>选课人数</th>
+        <th>是否安排教师</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="course : ${courses}">
+        <td th:text="${course.courseId}">001</td>
+        <td th:text="${course.courseName}">课程名</td>
+        <td th:text="${course.credit}">3</td>
+        <td th:text="${course.specificRequirement} != null ? ${course.specificRequirement} : '通用课程'">-</td>
+        <td th:text="${countMap.get(course.courseId)} ?: 0">0</td>
+        <td th:text="${course.isArrangeTeacher} ? '已安排' : '未安排'">未安排</td>
+    </tr>
+    </tbody>
+</table>
+<p style="text-align:center;"><a href="/view/student/1001">查看学生 1001 的选课详情</a></p>
+</body>
+</html>
