@@ -8,6 +8,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -83,7 +84,17 @@ public class CourseService {
 
     // ===== 学生选课 =====
 
-    @Transactional
+    /**
+     * 学生选课。
+     *
+     * 容量校验用带悲观锁的查询读取课程，把同一门课的并发选课请求串行化。
+     *
+     * 隔离级别显式设为 READ_COMMITTED：MySQL 默认的 REPEATABLE-READ 下，
+     * 事务内的普通 SELECT 会读取事务开始时的快照，导致排队等待的请求
+     * 仍然用过期的人数做容量判断（实测 200 并发、Ramp-up 0 时仍会超出 9 人）。
+     * READ_COMMITTED 下每条查询都会读取最新的已提交数据，配合行锁才能正确拦截。
+     */
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Enrollment selectCourse(String studentId, String courseId) {
         List<Enrollment> existing = enrollRepo.findByStudentId(studentId);
         if (existing.size() >= 5) {
@@ -94,7 +105,8 @@ public class CourseService {
                 throw new BusinessException("已选该课程");
             }
         }
-        Course course = courseRepo.findById(courseId).orElse(null);
+        // 加写锁读取课程，保证同一门课的容量校验与插入是串行的
+        Course course = courseRepo.findByIdForUpdate(courseId).orElse(null);
         if (course == null) {
             throw new BusinessException("课程不存在");
         }
@@ -105,7 +117,7 @@ public class CourseService {
         Enrollment enroll = new Enrollment();
         enroll.setStudentId(studentId);
         enroll.setCourseId(courseId);
-        enroll.setGrade(null);  // ← 改成 null
+        enroll.setGrade(null);  // 成绩未录入统一用 null 表示
         try {
             return enrollRepo.save(enroll);
         } catch (DataIntegrityViolationException e) {
