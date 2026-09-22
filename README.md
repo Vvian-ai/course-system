@@ -1,5 +1,7 @@
 # 校园课程管理系统
 
+[![CI](https://github.com/Vvian-ai/course-system/actions/workflows/ci.yml/badge.svg)](https://github.com/Vvian-ai/course-system/actions/workflows/ci.yml)
+
 基于 Spring Boot 3 的课程管理系统，面向学生、教师、管理员三种角色，覆盖选课、退课、成绩录入与课程管理的完整流程。
 
 启动后接口文档地址：`http://localhost:8080/doc.html`

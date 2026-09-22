@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # 单元测试中包含 @SpringBootTest，需要真实的 MySQL 与 Redis，
+    # 因此在这里以服务容器的形式启动它们。
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root1234
+          MYSQL_DATABASE: course_system
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -proot1234"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: 编译并运行单元测试
+        env:
+          # application.properties 中以 ${...} 形式引用这些变量，
+          # 本地由 application-dev.properties 提供，CI 环境则通过环境变量注入
+          DB_USERNAME: root
+          DB_PASSWORD: root1234
+          ADMIN_USERNAME: admin
+          ADMIN_PASSWORD: $2a$10$PhpgKD/UkicLauJpSEEIQea9dLB.ps4a5g6SpoRLtQIxGeK0ncuea
+          JWT_SECRET: ci-only-secret-key-at-least-32-characters-long
+        run: mvn -B test
