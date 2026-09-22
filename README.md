@@ -62,7 +62,7 @@ cp src/main/resources/application-dev.properties.example src/main/resources/appl
 
 需要填写：数据库账号密码、管理员账号（密码是 BCrypt 哈希）、JWT 密钥（至少 32 字符）。
 
-### 3. 启动
+### 3. 启动（方式一：本地运行）
 
 ```bash
 ./mvnw spring-boot:run
@@ -71,6 +71,25 @@ cp src/main/resources/application-dev.properties.example src/main/resources/appl
 首次启动时会自动执行 `schema.sql` 建表（若表不存在），并插入一组演示数据。
 
 访问 `http://localhost:8080/login`，接口文档在 `http://localhost:8080/doc.html`。
+
+### 方式二：Docker Compose 一键启动
+
+如果本机装了 Docker，可以跳过上面所有环境准备，直接用容器启动：
+
+```bash
+docker compose up --build
+```
+
+它会拉起三个容器：MySQL、Redis 和应用。首次构建需要几分钟（拉取镜像 + 下载 Maven 依赖），
+之后再启动只要十几秒。启动完成后同样访问 `http://localhost:8080/login`。
+
+```bash
+docker compose down        # 停止容器（保留数据）
+docker compose down -v     # 停止并删除数据卷，彻底重置
+```
+
+`docker-compose.yml` 里的数据库账号、管理员密码和 JWT 密钥都是本地演示用的固定值，
+仅用于本机运行，不要直接用于生产环境。
 
 ### 4. 演示账号
 
