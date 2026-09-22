@@ -64,7 +64,7 @@ class CourseServiceTest {
         existing.add(createEnrollment("1001", "002"));
 
         when(enrollRepo.findByStudentId("1001")).thenReturn(existing);
-        when(courseRepo.findById("001")).thenReturn(Optional.of(testCourse));
+        when(courseRepo.findByIdForUpdate("001")).thenReturn(Optional.of(testCourse));
         when(enrollRepo.countByCourseId("001")).thenReturn(0L);
         when(enrollRepo.save(any(Enrollment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -111,7 +111,7 @@ class CourseServiceTest {
     @DisplayName("选课失败 - 课程不存在")
     void testSelectCourse_CourseNotFound() {
         when(enrollRepo.findByStudentId("1001")).thenReturn(new ArrayList<>());
-        when(courseRepo.findById("999")).thenReturn(Optional.empty());
+        when(courseRepo.findByIdForUpdate("999")).thenReturn(Optional.empty());
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> courseService.selectCourse("1001", "999"));
@@ -125,7 +125,7 @@ class CourseServiceTest {
         testCourse.setCapacity(1);
 
         when(enrollRepo.findByStudentId("1001")).thenReturn(new ArrayList<>());
-        when(courseRepo.findById("001")).thenReturn(Optional.of(testCourse));
+        when(courseRepo.findByIdForUpdate("001")).thenReturn(Optional.of(testCourse));
         when(enrollRepo.countByCourseId("001")).thenReturn(1L);  // 已选 1 人
 
         RuntimeException ex = assertThrows(RuntimeException.class,
